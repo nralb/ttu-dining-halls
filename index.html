@@ -1,188 +1,147 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Dining Map</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
+import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Star } from 'lucide-react';
 
-        body {
-            padding: 20px;
-            background-color: #f0f2f5;
-        }
+// Sample dining hall data
+const diningHalls = [
+  {
+    id: 1,
+    name: 'North Campus Dining',
+    location: [42.2808, -83.7430],
+    reviews: [
+      { id: 1, rating: 4, text: 'Great variety of food options!', author: 'Student A' },
+      { id: 2, rating: 3, text: 'Decent food, but can get crowded', author: 'Student B' }
+    ],
+    synopsis: 'Modern dining hall with multiple cuisine stations and dietary options.'
+  },
+  {
+    id: 2,
+    name: 'South Campus Dining',
+    location: [42.2778, -83.7380],
+    reviews: [
+      { id: 1, rating: 5, text: 'Amazing salad bar and fresh ingredients', author: 'Student C' }
+    ],
+    synopsis: 'Spacious dining hall known for its healthy food choices.'
+  }
+];
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+// Review Component
+const ReviewSection = ({ hall, onAddReview }) => {
+  const [newReview, setNewReview] = useState('');
+  const [rating, setRating] = useState(0);
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
+  const handleSubmitReview = () => {
+    if (newReview.trim() && rating > 0) {
+      onAddReview(hall.id, {
+        id: hall.reviews.length + 1,
+        text: newReview,
+        rating: rating,
+        author: 'Anonymous'
+      });
+      setNewReview('');
+      setRating(0);
+    }
+  };
 
-        .map-container {
-            flex: 1;
-            min-width: 300px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .map {
-            width: 100%;
-            height: 400px;
-            background-color: #e8e8e8;
-            position: relative;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .dining-location {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #ff4444;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-
-        .dining-location:hover {
-            transform: scale(1.1);
-        }
-
-        .review-container {
-            flex: 1;
-            min-width: 300px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .review-header {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f2f5;
-        }
-
-        .review {
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .stars {
-            color: #ffd700;
-            margin: 5px 0;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Campus Dining Map</h1>
-        <p>Click on a dining location to see reviews</p>
-    </div>
-    
-    <div class="container">
-        <div class="map-container">
-            <div class="map">
-                <!-- Sample dining locations -->
-                <div class="dining-location" style="top: 30%; left: 20%" onclick="showReviews('north-dining')">1</div>
-                <div class="dining-location" style="top: 50%; left: 60%" onclick="showReviews('south-dining')">2</div>
-                <div class="dining-location" style="top: 70%; left: 40%" onclick="showReviews('west-dining')">3</div>
+  return (
+    <Card className="w-full max-w-md mx-auto mt-4">
+      <CardHeader>
+        <CardTitle>{hall.name} Reviews</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="mb-4">{hall.synopsis}</p>
+        {hall.reviews.map(review => (
+          <div key={review.id} className="mb-2 p-2 border rounded">
+            <div className="flex items-center">
+              {[...Array(review.rating)].map((_, i) => (
+                <Star key={i} color="gold" fill="gold" size={16} />
+              ))}
             </div>
+            <p>{review.text}</p>
+            <small className="text-gray-500">- {review.author}</small>
+          </div>
+        ))}
+      </CardContent>
+      <CardFooter>
+        <div className="w-full">
+          <div className="flex mb-2">
+            {[1,2,3,4,5].map(num => (
+              <Star 
+                key={num} 
+                color={num <= rating ? "gold" : "gray"} 
+                fill={num <= rating ? "gold" : "none"} 
+                size={24}
+                onClick={() => setRating(num)}
+                className="cursor-pointer"
+              />
+            ))}
+          </div>
+          <Textarea 
+            placeholder="Write your review here..."
+            value={newReview}
+            onChange={(e) => setNewReview(e.target.value)}
+            className="mb-2"
+          />
+          <Button onClick={handleSubmitReview}>Submit Review</Button>
         </div>
+      </CardFooter>
+    </Card>
+  );
+};
 
-        <div class="review-container">
-            <div id="default-message">
-                <h2>Select a dining location to see reviews</h2>
-            </div>
-            
-            <!-- North Dining Reviews -->
-            <div id="north-dining" class="reviews hidden">
-                <div class="review-header">
-                    <h2>North Dining Hall</h2>
-                    <div class="stars">★★★★☆</div>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 4/5</strong></p>
-                    <p>"Great variety of options. The pizza is especially good!"</p>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 4/5</strong></p>
-                    <p>"Fresh salad bar and friendly staff."</p>
-                </div>
-            </div>
+// Main App Component
+const CampusDiningApp = () => {
+  const [selectedHall, setSelectedHall] = useState(null);
+  const [halls, setHalls] = useState(diningHalls);
 
-            <!-- South Dining Reviews -->
-            <div id="south-dining" class="reviews hidden">
-                <div class="review-header">
-                    <h2>South Dining Hall</h2>
-                    <div class="stars">★★★☆☆</div>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 3/5</strong></p>
-                    <p>"Decent food but can get crowded during peak hours."</p>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 3/5</strong></p>
-                    <p>"Good breakfast options but limited vegetarian choices."</p>
-                </div>
-            </div>
+  const addReview = (hallId, newReview) => {
+    setHalls(prevHalls => 
+      prevHalls.map(hall => 
+        hall.id === hallId 
+          ? {...hall, reviews: [...hall.reviews, newReview]} 
+          : hall
+      )
+    );
+  };
 
-            <!-- West Dining Reviews -->
-            <div id="west-dining" class="reviews hidden">
-                <div class="review-header">
-                    <h2>West Dining Hall</h2>
-                    <div class="stars">★★★★★</div>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 5/5</strong></p>
-                    <p>"Best dining hall on campus! Amazing international options."</p>
-                </div>
-                <div class="review">
-                    <p><strong>Rating: 5/5</strong></p>
-                    <p>"The made-to-order stir fry station is incredible!"</p>
-                </div>
-            </div>
-        </div>
+  return (
+    <div className="flex flex-col items-center p-4">
+      <h1 className="text-3xl font-bold mb-4">Campus Dining Hall Reviews</h1>
+      
+      <MapContainer 
+        center={[42.2808, -83.7430]} 
+        zoom={14} 
+        scrollWheelZoom={false}
+        className="h-[500px] w-full max-w-4xl"
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        {halls.map(hall => (
+          <Marker 
+            key={hall.id} 
+            position={hall.location}
+            eventHandlers={{
+              click: () => setSelectedHall(hall),
+            }}
+          >
+            <Popup>{hall.name}</Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+
+      {selectedHall && (
+        <ReviewSection 
+          hall={selectedHall} 
+          onAddReview={addReview}
+        />
+      )}
     </div>
+  );
+};
 
-    <script>
-        function showReviews(diningHall) {
-            // Hide all reviews
-            document.querySelectorAll('.reviews').forEach(review => {
-                review.classList.add('hidden');
-            });
-            
-            // Hide default message
-            document.getElementById('default-message').classList.add('hidden');
-            
-            // Show selected dining hall reviews
-            document.getElementById(diningHall).classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+export default CampusDiningApp;
