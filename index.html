@@ -1,256 +1,187 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Star, X } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Dining Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
 
-// Sample dining hall data
-const diningHalls = [
-  {
-    id: 1,
-    name: 'North Campus Dining',
-    location: { x: 200, y: 100 },
-    reviews: [
-      { id: 1, rating: 4, text: 'Great variety of food options!', author: 'Student A' },
-      { id: 2, rating: 3, text: 'Decent food, but can get crowded', author: 'Student B' }
-    ],
-    synopsis: 'Modern dining hall with multiple cuisine stations and dietary options.'
-  },
-  {
-    id: 2,
-    name: 'South Campus Dining',
-    location: { x: 350, y: 250 },
-    reviews: [
-      { id: 1, rating: 5, text: 'Amazing salad bar and fresh ingredients', author: 'Student C' }
-    ],
-    synopsis: 'Spacious dining hall known for its healthy food choices.'
-  },
-  {
-    id: 3,
-    name: 'Central Campus Dining',
-    location: { x: 500, y: 150 },
-    reviews: [],
-    synopsis: 'Centrally located dining hall with quick service.'
-  }
-];
+        body {
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
 
-// Review Component (Same as previous version)
-const ReviewSection = ({ hall, onAddReview, onClose }) => {
-  const [newReview, setNewReview] = useState('');
-  const [rating, setRating] = useState(0);
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-  const handleSubmitReview = () => {
-    if (newReview.trim() && rating > 0) {
-      onAddReview(hall.id, {
-        id: hall.reviews.length + 1,
-        text: newReview,
-        rating: rating,
-        author: 'Anonymous'
-      });
-      setNewReview('');
-      setRating(0);
-    }
-  };
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
 
-  return (
-    <div className="fixed top-0 right-0 w-96 h-full bg-white shadow-lg z-50 overflow-y-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">{hall.name}</h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-6 w-6" />
-        </Button>
-      </div>
-      
-      <Card className="w-full">
-        <CardContent>
-          <p className="mb-4 text-gray-600">{hall.synopsis}</p>
-          
-          {hall.reviews.length > 0 ? (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Reviews</h3>
-              {hall.reviews.map(review => (
-                <div key={review.id} className="p-3 border rounded-lg">
-                  <div className="flex items-center mb-2">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} color="gold" fill="gold" size={16} />
-                    ))}
-                  </div>
-                  <p className="text-sm">{review.text}</p>
-                  <small className="text-gray-500 block mt-1">- {review.author}</small>
+        .map-container {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .map {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .dining-location {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .dining-location:hover {
+            transform: scale(1.1);
+        }
+
+        .review-container {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .review-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        .review {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stars {
+            color: #ffd700;
+            margin: 5px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Campus Dining Map</h1>
+        <p>Click on a dining location to see reviews</p>
+    </div>
+    
+    <div class="container">
+        <div class="map-container">
+            <img src="campus-map.jpg" alt="Campus Dining Map" class="map">
+            
+            <!-- Sample dining locations -->
+            <div class="dining-location" style="top: 30%; left: 20%" onclick="showReviews('north-dining')">1</div>
+            <div class="dining-location" style="top: 50%; left: 60%" onclick="showReviews('south-dining')">2</div>
+            <div class="dining-location" style="top: 70%; left: 40%" onclick="showReviews('west-dining')">3</div>
+        </div>
+
+        <div class="review-container">
+            <div id="default-message">
+                <h2>Select a dining location to see reviews</h2>
+            </div>
+            
+            <!-- North Dining Reviews -->
+            <div id="north-dining" class="reviews hidden">
+                <div class="review-header">
+                    <h2>North Dining Hall</h2>
+                    <div class="stars">★★★★☆</div>
                 </div>
-              ))}
+                <div class="review">
+                    <p><strong>Rating: 4/5</strong></p>
+                    <p>"Great variety of options. The pizza is especially good!"</p>
+                </div>
+                <div class="review">
+                    <p><strong>Rating: 4/5</strong></p>
+                    <p>"Fresh salad bar and friendly staff."</p>
+                </div>
             </div>
-          ) : (
-            <p className="text-gray-500">No reviews yet. Be the first to review!</p>
-          )}
-        </CardContent>
-        <CardFooter>
-          <div className="w-full">
-            <div className="flex mb-2">
-              {[1,2,3,4,5].map(num => (
-                <Star 
-                  key={num} 
-                  color={num <= rating ? "gold" : "gray"} 
-                  fill={num <= rating ? "gold" : "none"} 
-                  size={24}
-                  onClick={() => setRating(num)}
-                  className="cursor-pointer"
-                />
-              ))}
+
+            <!-- South Dining Reviews -->
+            <div id="south-dining" class="reviews hidden">
+                <div class="review-header">
+                    <h2>South Dining Hall</h2>
+                    <div class="stars">★★★☆☆</div>
+                </div>
+                <div class="review">
+                    <p><strong>Rating: 3/5</strong></p>
+                    <p>"Decent food but can get crowded during peak hours."</p>
+                </div>
+                <div class="review">
+                    <p><strong>Rating: 3/5</strong></p>
+                    <p>"Good breakfast options but limited vegetarian choices."</p>
+                </div>
             </div>
-            <Textarea 
-              placeholder="Write your review here..."
-              value={newReview}
-              onChange={(e) => setNewReview(e.target.value)}
-              className="mb-2"
-            />
-            <Button onClick={handleSubmitReview} className="w-full">Submit Review</Button>
-          </div>
-        </CardFooter>
-      </Card>
+
+            <!-- West Dining Reviews -->
+            <div id="west-dining" class="reviews hidden">
+                <div class="review-header">
+                    <h2>West Dining Hall</h2>
+                    <div class="stars">★★★★★</div>
+                </div>
+                <div class="review">
+                    <p><strong>Rating: 5/5</strong></p>
+                    <p>"Best dining hall on campus! Amazing international options."</p>
+                </div>
+                <div class="review">
+                    <p><strong>Rating: 5/5</strong></p>
+                    <p>"The made-to-order stir fry station is incredible!"</p>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-};
 
-// Main App Component
-const CampusDiningApp = () => {
-  const [selectedHall, setSelectedHall] = useState(null);
-  const [halls, setHalls] = useState(diningHalls);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const mapContainerRef = useRef(null);
-
-  const addReview = (hallId, newReview) => {
-    setHalls(prevHalls => 
-      prevHalls.map(hall => 
-        hall.id === hallId 
-          ? {...hall, reviews: [...hall.reviews, newReview]} 
-          : hall
-      )
-    );
-  };
-
-  const handleMouseDown = (e) => {
-    if (e.button !== 0) return; // Only left mouse button
-    setIsDragging(true);
-    setStartPos({ 
-      x: e.clientX - pan.x, 
-      y: e.clientY - pan.y 
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    setPan({
-      x: e.clientX - startPos.x,
-      y: e.clientY - startPos.y
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e) => {
-    e.preventDefault();
-    
-    // Get the mouse position relative to the container
-    const container = mapContainerRef.current;
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    // Calculate zoom
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    const newZoom = Math.max(0.5, Math.min(zoom + delta, 3));
-    
-    // Calculate new pan to zoom relative to mouse position
-    const zoomFactor = newZoom / zoom;
-    const newPanX = mouseX - zoomFactor * (mouseX - pan.x);
-    const newPanY = mouseY - zoomFactor * (mouseY - pan.y);
-
-    setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
-  };
-
-  useEffect(() => {
-    const container = mapContainerRef.current;
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, [zoom, pan]);
-
-  return (
-    <div 
-      ref={mapContainerRef}
-      className="relative w-screen h-screen overflow-hidden"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-    >
-      {/* Zoomable Map Container */}
-      <div 
-        className="absolute inset-0 bg-gray-100"
-        style={{
-          transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-          transformOrigin: 'top left',
-          transition: 'transform 0.1s ease'
-        }}
-      >
-        <svg viewBox="0 0 600 300" className="w-full h-full">
-          {/* Background campus map (simplified) */}
-          <rect width="600" height="300" fill="#f0f0f0" />
-          <path 
-            d="M50 50 L550 50 L550 250 L50 250 Z" 
-            fill="white" 
-            stroke="#d0d0d0" 
-            strokeWidth="3"
-          />
-
-          {halls.map(hall => (
-            <g key={hall.id}>
-              <circle
-                cx={hall.location.x}
-                cy={hall.location.y}
-                r={10 / zoom}  // Adjust marker size with zoom
-                fill={selectedHall === hall ? "red" : "blue"}
-                className="cursor-pointer transition-all duration-200"
-                onClick={() => setSelectedHall(hall)}
-              />
-              <text
-                x={hall.location.x}
-                y={hall.location.y - 20}
-                textAnchor="middle"
-                fontSize={`${12 / zoom}px`}  // Adjust text size with zoom
-                fill="black"
-              >
-                {hall.name}
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      {/* Zoom Level Display */}
-      <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow">
-        Zoom: {(zoom * 100).toFixed(0)}%
-      </div>
-
-      {/* Review Sidebar */}
-      {selectedHall && (
-        <ReviewSection 
-          hall={selectedHall} 
-          onAddReview={addReview}
-          onClose={() => setSelectedHall(null)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default CampusDiningApp;
+    <script>
+        function showReviews(diningHall) {
+            // Hide all reviews
+            document.querySelectorAll('.reviews').forEach(review => {
+                review.classList.add('hidden');
+            });
+            
+            // Hide default message
+            document.getElementById('default-message').classList.add('hidden');
+            
+            // Show selected dining hall reviews
+            document.getElementById(diningHall).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
