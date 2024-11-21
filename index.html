@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Star } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 
 // Sample dining hall data
 const diningHalls = [
   {
     id: 1,
     name: 'North Campus Dining',
-    location: [42.2808, -83.7430],
+    location: { x: 200, y: 100 },
     reviews: [
       { id: 1, rating: 4, text: 'Great variety of food options!', author: 'Student A' },
       { id: 2, rating: 3, text: 'Decent food, but can get crowded', author: 'Student B' }
@@ -20,16 +19,23 @@ const diningHalls = [
   {
     id: 2,
     name: 'South Campus Dining',
-    location: [42.2778, -83.7380],
+    location: { x: 350, y: 250 },
     reviews: [
       { id: 1, rating: 5, text: 'Amazing salad bar and fresh ingredients', author: 'Student C' }
     ],
     synopsis: 'Spacious dining hall known for its healthy food choices.'
+  },
+  {
+    id: 3,
+    name: 'Central Campus Dining',
+    location: { x: 500, y: 150 },
+    reviews: [],
+    synopsis: 'Centrally located dining hall with quick service.'
   }
 ];
 
-// Review Component
-const ReviewSection = ({ hall, onAddReview }) => {
+// Review Component (Same as previous version)
+const ReviewSection = ({ hall, onAddReview, onClose }) => {
   const [newReview, setNewReview] = useState('');
   const [rating, setRating] = useState(0);
 
@@ -47,48 +53,62 @@ const ReviewSection = ({ hall, onAddReview }) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto mt-4">
-      <CardHeader>
-        <CardTitle>{hall.name} Reviews</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-4">{hall.synopsis}</p>
-        {hall.reviews.map(review => (
-          <div key={review.id} className="mb-2 p-2 border rounded">
-            <div className="flex items-center">
-              {[...Array(review.rating)].map((_, i) => (
-                <Star key={i} color="gold" fill="gold" size={16} />
+    <div className="fixed top-0 right-0 w-96 h-full bg-white shadow-lg z-50 overflow-y-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">{hall.name}</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-6 w-6" />
+        </Button>
+      </div>
+      
+      <Card className="w-full">
+        <CardContent>
+          <p className="mb-4 text-gray-600">{hall.synopsis}</p>
+          
+          {hall.reviews.length > 0 ? (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Reviews</h3>
+              {hall.reviews.map(review => (
+                <div key={review.id} className="p-3 border rounded-lg">
+                  <div className="flex items-center mb-2">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} color="gold" fill="gold" size={16} />
+                    ))}
+                  </div>
+                  <p className="text-sm">{review.text}</p>
+                  <small className="text-gray-500 block mt-1">- {review.author}</small>
+                </div>
               ))}
             </div>
-            <p>{review.text}</p>
-            <small className="text-gray-500">- {review.author}</small>
+          ) : (
+            <p className="text-gray-500">No reviews yet. Be the first to review!</p>
+          )}
+        </CardContent>
+        <CardFooter>
+          <div className="w-full">
+            <div className="flex mb-2">
+              {[1,2,3,4,5].map(num => (
+                <Star 
+                  key={num} 
+                  color={num <= rating ? "gold" : "gray"} 
+                  fill={num <= rating ? "gold" : "none"} 
+                  size={24}
+                  onClick={() => setRating(num)}
+                  className="cursor-pointer"
+                />
+              ))}
+            </div>
+            <Textarea 
+              placeholder="Write your review here..."
+              value={newReview}
+              onChange={(e) => setNewReview(e.target.value)}
+              className="mb-2"
+            />
+            <Button onClick={handleSubmitReview} className="w-full">Submit Review</Button>
           </div>
-        ))}
-      </CardContent>
-      <CardFooter>
-        <div className="w-full">
-          <div className="flex mb-2">
-            {[1,2,3,4,5].map(num => (
-              <Star 
-                key={num} 
-                color={num <= rating ? "gold" : "gray"} 
-                fill={num <= rating ? "gold" : "none"} 
-                size={24}
-                onClick={() => setRating(num)}
-                className="cursor-pointer"
-              />
-            ))}
-          </div>
-          <Textarea 
-            placeholder="Write your review here..."
-            value={newReview}
-            onChange={(e) => setNewReview(e.target.value)}
-            className="mb-2"
-          />
-          <Button onClick={handleSubmitReview}>Submit Review</Button>
-        </div>
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+    </div>
   );
 };
 
@@ -96,6 +116,11 @@ const ReviewSection = ({ hall, onAddReview }) => {
 const CampusDiningApp = () => {
   const [selectedHall, setSelectedHall] = useState(null);
   const [halls, setHalls] = useState(diningHalls);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const mapContainerRef = useRef(null);
 
   const addReview = (hallId, newReview) => {
     setHalls(prevHalls => 
@@ -107,37 +132,121 @@ const CampusDiningApp = () => {
     );
   };
 
-  return (
-    <div className="flex flex-col items-center p-4">
-      <h1 className="text-3xl font-bold mb-4">Campus Dining Hall Reviews</h1>
-      
-      <MapContainer 
-        center={[42.2808, -83.7430]} 
-        zoom={14} 
-        scrollWheelZoom={false}
-        className="h-[500px] w-full max-w-4xl"
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        {halls.map(hall => (
-          <Marker 
-            key={hall.id} 
-            position={hall.location}
-            eventHandlers={{
-              click: () => setSelectedHall(hall),
-            }}
-          >
-            <Popup>{hall.name}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return; // Only left mouse button
+    setIsDragging(true);
+    setStartPos({ 
+      x: e.clientX - pan.x, 
+      y: e.clientY - pan.y 
+    });
+  };
 
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - startPos.x,
+      y: e.clientY - startPos.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    
+    // Get the mouse position relative to the container
+    const container = mapContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Calculate zoom
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newZoom = Math.max(0.5, Math.min(zoom + delta, 3));
+    
+    // Calculate new pan to zoom relative to mouse position
+    const zoomFactor = newZoom / zoom;
+    const newPanX = mouseX - zoomFactor * (mouseX - pan.x);
+    const newPanY = mouseY - zoomFactor * (mouseY - pan.y);
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  };
+
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [zoom, pan]);
+
+  return (
+    <div 
+      ref={mapContainerRef}
+      className="relative w-screen h-screen overflow-hidden"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
+      {/* Zoomable Map Container */}
+      <div 
+        className="absolute inset-0 bg-gray-100"
+        style={{
+          transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
+          transformOrigin: 'top left',
+          transition: 'transform 0.1s ease'
+        }}
+      >
+        <svg viewBox="0 0 600 300" className="w-full h-full">
+          {/* Background campus map (simplified) */}
+          <rect width="600" height="300" fill="#f0f0f0" />
+          <path 
+            d="M50 50 L550 50 L550 250 L50 250 Z" 
+            fill="white" 
+            stroke="#d0d0d0" 
+            strokeWidth="3"
+          />
+
+          {halls.map(hall => (
+            <g key={hall.id}>
+              <circle
+                cx={hall.location.x}
+                cy={hall.location.y}
+                r={10 / zoom}  // Adjust marker size with zoom
+                fill={selectedHall === hall ? "red" : "blue"}
+                className="cursor-pointer transition-all duration-200"
+                onClick={() => setSelectedHall(hall)}
+              />
+              <text
+                x={hall.location.x}
+                y={hall.location.y - 20}
+                textAnchor="middle"
+                fontSize={`${12 / zoom}px`}  // Adjust text size with zoom
+                fill="black"
+              >
+                {hall.name}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* Zoom Level Display */}
+      <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow">
+        Zoom: {(zoom * 100).toFixed(0)}%
+      </div>
+
+      {/* Review Sidebar */}
       {selectedHall && (
         <ReviewSection 
           hall={selectedHall} 
           onAddReview={addReview}
+          onClose={() => setSelectedHall(null)}
         />
       )}
     </div>
