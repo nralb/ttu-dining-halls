@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTU Campus Dining Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="map-container">
+            <h1>Texas Tech Dining Map</h1>
+            <div id="map"></div>
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <!-- Initially show placeholder -->
+            <div class="info-panel-placeholder" id="placeholder">
+                Click a dining location on the map to see details
+            </div>
+            
+            <!-- Details content (initially hidden) -->
+            <div class="panel-content" id="panelContent" style="display: none;">
+                <h2 id="hallName"></h2>
+                <div id="overallRating"></div>
+                
+                <div class="synopsis-section">
+                    <h3>About</h3>
+                    <p id="hallDescription"></p>
+                </div>
+                
+                <div class="reviews-section">
+                    <h3>Reviews</h3>
+                    <div id="reviewsList"></div>
+                </div>
+                
+                <div class="add-review">
+                    <h3>Add Your Review</h3>
+                    <form id="reviewForm">
+                        <div class="rating">
+                            <input type="number" min="1" max="5" id="starRating" required>
+                            <label for="starRating">Stars (1-5)</label>
+                        </div>
+                        <textarea id="reviewText" required placeholder="Write your review here..."></textarea>
+                        <button type="submit">Submit Review</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
